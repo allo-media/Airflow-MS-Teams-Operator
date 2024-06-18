@@ -17,7 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-from airflow.hooks.http_hook import HttpHook
+import json
+
+from airflow.providers.http.hooks.http import HttpHook
 from airflow.exceptions import AirflowException
 
 
@@ -46,18 +48,20 @@ class MSTeamsWebhookHook(HttpHook):
     :type proxy: str
 
     """
-    def __init__(self,
-                 http_conn_id=None,
-                 webhook_token=None,
-                 message="",
-                 subtitle="",
-                 button_text="",
-                 button_url="",
-                 theme_color="00FF00",
-                 proxy=None,
-                 *args,
-                 **kwargs
-                 ):
+
+    def __init__(
+        self,
+        http_conn_id=None,
+        webhook_token=None,
+        message="",
+        subtitle="",
+        button_text="",
+        button_url="",
+        theme_color="00FF00",
+        proxy=None,
+        *args,
+        **kwargs
+    ):
         super(MSTeamsWebhookHook, self).__init__(*args, **kwargs)
         self.http_conn_id = http_conn_id
         self.webhook_token = self.get_token(webhook_token, http_conn_id)
@@ -72,7 +76,7 @@ class MSTeamsWebhookHook(HttpHook):
         conn = self.get_connection(http_conn_id)
         extra = conn.extra_dejson
         print(extra)
-        return extra.get("proxy", '')
+        return extra.get("proxy", "")
 
     def get_token(self, token, http_conn_id):
         """
@@ -86,36 +90,34 @@ class MSTeamsWebhookHook(HttpHook):
         elif http_conn_id:
             conn = self.get_connection(http_conn_id)
             extra = conn.extra_dejson
-            return extra.get('webhook_token', '')
+            return extra.get("webhook_token", "")
         else:
-            raise AirflowException('Cannot get URL: No valid MS Teams '
-                                   'webhook URL nor conn_id supplied')
+            raise AirflowException(
+                "Cannot get URL: No valid MS Teams " "webhook URL nor conn_id supplied"
+            )
 
     def build_message(self):
-        cardjson = """
-                {{
+        cardjson = {
             "@type": "MessageCard",
             "@context": "http://schema.org/extensions",
-            "themeColor": "{3}",
-            "summary": "{0}",
-            "sections": [{{
-                "activityTitle": "{1}",
-                "activitySubtitle": "{2}",
-                "markdown": true,
-                "potentialAction": [
-                    {{
-                        "@type": "OpenUri",
-                        "name": "{4}",
-                        "targets": [
-                            {{ "os": "default", "uri": "{5}" }}
-                        ]
-                    }}
-                ]
-            }}]
-            }}
-                """
-        return cardjson.format(self.message, self.message, self.subtitle, self.theme_color,
-                               self.button_text, self.button_url)
+            "themeColor": self.theme_color,
+            "summary": self.message,
+            "sections": [
+                {
+                    "activityTitle": self.message,
+                    "activitySubtitle": self.subtitle,
+                    "markdown": "true",
+                    "potentialAction": [
+                        {
+                            "@type": "OpenUri",
+                            "name": self.button_text,
+                            "targets": [{"os": "default", "uri": self.button_url}],
+                        }
+                    ],
+                }
+            ],
+        }
+        return json.dumps(cardjson)
 
     def execute(self):
         """
@@ -128,9 +130,11 @@ class MSTeamsWebhookHook(HttpHook):
         proxy_url = self.get_proxy(self.http_conn_id)
         print("Proxy is : " + proxy_url)
         if len(proxy_url) > 5:
-            proxies = {'https': proxy_url}
+            proxies = {"https": proxy_url}
 
-        self.run(endpoint=self.webhook_token,
-                 data=self.build_message(),
-                 headers={'Content-type': 'application/json'},
-                 extra_options={'proxies': proxies})
+        self.run(
+            endpoint=self.webhook_token,
+            data=self.build_message(),
+            headers={"Content-type": "application/json"},
+            extra_options={"proxies": proxies},
+        )
