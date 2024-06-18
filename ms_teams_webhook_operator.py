@@ -47,22 +47,29 @@ class MSTeamsWebhookOperator(HttpOperator):
     :type proxy: str
     """
 
-    template_fields = ('message', 'subtitle',)
+    template_fields = (
+        "message",
+        "subtitle",
+    )
 
     @apply_defaults
-    def __init__(self,
-                 http_conn_id=None,
-                 webhook_token=None,
-                 message="",
-                 subtitle="",
-                 button_text="",
-                 button_url="",
-                 theme_color="00FF00",
-                 proxy=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        http_conn_id=None,
+        webhook_token=None,
+        message="",
+        subtitle="",
+        button_text="",
+        button_url="",
+        theme_color="00FF00",
+        proxy=None,
+        *args,
+        **kwargs
+    ):
 
-        super(MSTeamsWebhookOperator, self).__init__(endpoint=webhook_token, *args, **kwargs)
+        super(MSTeamsWebhookOperator, self).__init__(
+            endpoint=webhook_token, *args, **kwargs
+        )
         self.http_conn_id = http_conn_id
         self.webhook_token = webhook_token
         self.message = message
@@ -82,7 +89,7 @@ class MSTeamsWebhookOperator(HttpOperator):
             self.button_text,
             self.button_url,
             self.theme_color,
-            self.proxy
+            self.proxy,
         )
 
     def execute(self, context):
