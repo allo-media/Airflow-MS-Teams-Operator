@@ -19,7 +19,7 @@
 #
 from airflow.providers.http.operators.http import HttpOperator
 from airflow.utils.decorators import apply_defaults
-from ms_teams_webhook_hook import MSTeamsWebhookHook
+from hooks.ms_teams_webhook_hook import MSTeamsWebhookHook
 import logging
 
 
